@@ -18,12 +18,15 @@
 
 const String VERSION = "0.0.1";
 
-// #define DEBUG_DONG
+// Uncomment DEBUG_DONG line for debug
+#define DEBUG_DONG
+
 #define BAUDRATE 115200
 #define MAX_DELAY 15
 #define MAX_ROTATION 30
 #define MAX_FRAME 200
-
+#define DELAY_BEFORE_SHUTTER_RELEASE 50
+#define DELAY_AFTER_SHUTTER_RELEASE 1000
 AlarmId id;
 AlarmId shutterId;
 int readKey;
@@ -33,7 +36,8 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 #define PIN_STEPPER_IN_2 11
 #define PIN_STEPPER_IN_3 12
 #define PIN_STEPPER_IN_4 13
-
+#define NYALA HIGH
+#define MATI LOW
 #define HALFSTEPS 4096
 TinyStepper stepper(HALFSTEPS, PIN_STEPPER_IN_1, PIN_STEPPER_IN_2, PIN_STEPPER_IN_3, PIN_STEPPER_IN_4);
 
@@ -86,7 +90,7 @@ unsigned int valueSelectedPreset, valueSelectedTrigger, currentFrame,
 int loadDelay, loadStep, loadFrame = 0;
 int loadTriggerInput;
 
-#define PIN_SHUTTER 7
+#define PIN_SHUTTER_JACK_AUDIO 2
 #define PIN_FOCUS 8
 
 // byte valuePresetLow[3] = {addressPresetLowDelay, addressPresetLowRotation, addressPresetLowFrame};
@@ -229,10 +233,10 @@ void setup() {
   lcd.print("Please Wait");
   readEEPROM();
   initTimer();
-  pinMode(PIN_SHUTTER, OUTPUT);
+  pinMode(PIN_SHUTTER_JACK_AUDIO, OUTPUT);
   pinMode(PIN_FOCUS, OUTPUT);
   delay(1000);
-  stepper.Enable();
+  Serial.println("Ready");
   lcd.clear();
   Serial.println(F(""));
   Serial.println(F(""));
@@ -374,6 +378,7 @@ void menuCapture() { // Function executes when you select the 2nd item from main
   while (activeButton == 0) {
     lcd.setCursor(0, 0);
     lcd.print("Intializing...");
+    stepper.Enable();
     Serial.println(" ");
     #ifdef DEBUG_DONG
     Serial.println(F("[DEBUG] Intializing"));
@@ -416,7 +421,7 @@ void menuCapture() { // Function executes when you select the 2nd item from main
     isReadyCapture = true;
       //load by pin sensor
     if(valueSelectedTrigger == 0){
-      
+        loadTriggerInput = PIN_SHUTTER_JACK_AUDIO;
     }else if(valueSelectedTrigger == 1){
 
     }else if(valueSelectedTrigger == 2){
@@ -424,8 +429,9 @@ void menuCapture() { // Function executes when you select the 2nd item from main
     }
     while(isReadyCapture){
       // Serial.println(currentFrame);
-       Alarm.delay(0);
-      if(currentFrame <= loadFrame){
+      
+      if(currentFrame < loadFrame){
+        Alarm.delay(0);
         lcd.setCursor(0,0);
         lcd.print("Capturing...");
         lcd.setCursor(0, 1);
@@ -441,7 +447,10 @@ void menuCapture() { // Function executes when you select the 2nd item from main
           Serial.println(loadFrame);
           Serial.println(F("[DEBUG] Shutter relase.. "));
           #endif
-          delay(500); // shutter time needed
+          digitalWrite(loadTriggerInput, NYALA);
+          delay(DELAY_BEFORE_SHUTTER_RELEASE); // shutter time needed
+          digitalWrite(loadTriggerInput, MATI);
+          delay(DELAY_AFTER_SHUTTER_RELEASE);
           shutterReleaseReady = false;
           nextFrame = true;
         }
@@ -458,7 +467,6 @@ void menuCapture() { // Function executes when you select the 2nd item from main
         }
         
       } else {
-       
         Serial.println("");
         #ifdef DEBUG_DONG
         Serial.print(F("[DEBUG] Job is done! "));
@@ -469,9 +477,10 @@ void menuCapture() { // Function executes when you select the 2nd item from main
         lcd.setCursor(0,1);
         lcd.print("Enjoy ");
         lcd.write(byte(5));
+        stepper.Disable();
         delay(2000);
         Alarm.free(id); // free the memory
-        // id = dtINVALID_ALARM_ID;
+        id = dtINVALID_ALARM_ID;
         nextFrame = false;
         isReadyCapture = false;
         shutterReleaseReady = true;
@@ -495,10 +504,13 @@ void menuCapture() { // Function executes when you select the 2nd item from main
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("Cancel Caputre.");
+        Alarm.free(id); // free the memory
+        id = dtINVALID_ALARM_ID;
         loadDelay = 0;
         loadStep = 0;
         loadFrame = 0;
         currentFrame = 0;
+        stepper.Disable();
         delay(1000);
         isReadyCapture = false;
         nextFrame = false;
@@ -1282,7 +1294,7 @@ void subMenuSettings() { //SETTINGS
   }
 }
 
-void aboutMenu() {
+void aboutMenu(){
   int activeButton = 0;
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -1311,6 +1323,9 @@ void aboutMenu() {
   }
 }
 
+void menuShowCase(){
+
+}
 
 void operateMainMenu() {
   int activeButton = 0;
@@ -1333,6 +1348,7 @@ void operateMainMenu() {
             break;
           case 1:
             // showcase menu
+            menuShowCase();
           break;
           case 2:
             subMenuPreset();
