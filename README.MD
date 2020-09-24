@@ -1,7 +1,18 @@
 # Arduino Photogrammetry 📷
 
-Capture  the photo's automatically by input trigger (Audio Jack only for now) and also you can set the amount of photos from 1 to 200. for make it simpler I've made a preset menu **LOW**, **MEDIUM**, **HIGH** that can be customized as well.
+Capture the photos frame by frame with that object turn automatically.
 
+## How it's work ?
+Quite simple, The Arduino controlling the shutter release of the camera, how many steppers motor rotating (degrees), the delay time between capturing, how many photos to take.
+after done capturing process, you'll have many photos, that will be uploaded to the website app to render those photos.
+You can use Digital Camera or even Smartphone to capture the photos,
+and also you can set the amount of photos from 1 to 200. for making it simpler I've made a preset for quality menu **LOW**, **MEDIUM**, **HIGH** that can be customized as well.
+
+
+## For What is this ?
+.. 
+
+## results
 
 ## Hardware Requirements
 - Arduino UNO
@@ -10,8 +21,9 @@ Capture  the photo's automatically by input trigger (Audio Jack only for now) an
 - Jumper Wires
 
 
+
 ## To do
  -
 
 
- ### I know as well, the source absolutely not efficient, therefore pull request are very welcome. I'll very appreciate!
+ ### I know, the source code absolutely not efficient, by the way, pull requests are very welcome. I'll very appreciate it!
