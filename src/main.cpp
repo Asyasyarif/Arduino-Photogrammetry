@@ -16,7 +16,7 @@
 #include <EEPROM.h>
 #include <TinyStepper.h>
 
-const String VERSION = "0.0.1";
+const String VERSION = "0.0.2";
 
 // Uncomment DEBUG_DONG line for debug
 #define DEBUG_DONG
@@ -29,7 +29,8 @@ const String VERSION = "0.0.1";
 #define DELAY_AFTER_SHUTTER_RELEASE 1000
 
 #define TRIGGER_AUDIO_JACK 0
-#define TRIGGER_IR_SENSOR 1
+#define TRIGGER_BT_SERIAL 1 // bluetooth
+String commandShutterBT = "#trigger#";
 #define TRIGGER_MANUAL_BUTTON 2
 
 AlarmId id;
@@ -51,7 +52,7 @@ String menuItems[]    = {"START CAPTURE", "START SHOWCASE" ,"PRESETS", "SET TRIG
 int maxMenuPages = round(((sizeof(menuItems) / sizeof(String)) / 2) + .5);
 
 int triggerMenu = 0;
-String subTriggerMenu[]  = {"JACK 3.5mm", "IR Sensor", "Manual Button"};
+String subTriggerMenu[]  = {"JACK 3.5mm", "Bluetooth", "Manual Button"};
 int maxSubMenuTrigger = round(((sizeof(subTriggerMenu) / sizeof(String)) / 2) + .5);
 
 int presetMenu = 0;
@@ -427,7 +428,7 @@ void menuCapture() { // Function executes when you select the 2nd item from main
       //load by pin sensor
     if(valueSelectedTrigger == TRIGGER_AUDIO_JACK){
         loadTriggerInput = PIN_SHUTTER_JACK_AUDIO;
-    }else if(valueSelectedTrigger == TRIGGER_IR_SENSOR){ // IR SENSOR
+    }else if(valueSelectedTrigger == TRIGGER_BT_SERIAL){ // Bluetooth
 
     }else if(valueSelectedTrigger == TRIGGER_MANUAL_BUTTON){
 
@@ -462,11 +463,13 @@ void menuCapture() { // Function executes when you select the 2nd item from main
                 delay(100);
                 readKey = analogRead(0);
               }
+              lcd.setCursor(0,0);
+              lcd.print("[DEBUG] Press right btn");
               button = evaluateButton(readKey);
               switch (button) {
                 case 1:
                   #ifdef DEBUG_DONG
-                    Serial.println(F("Pressed right button"));
+                    Serial.println(F("[DEBUG] Pressed right button"));
                   #endif
                   shutterReleaseReady = false;
                   nextFrame = true;
@@ -474,7 +477,7 @@ void menuCapture() { // Function executes when you select the 2nd item from main
                 break;
                 case 4:  // This case will execute if the "back" button is pressed
                  #ifdef DEBUG_DONG
-                    Serial.println("Pressed Cancel button");
+                    Serial.println(F("[DEBUG] Pressed Cancel button"));
                  #endif
                   shutterReleaseReady = false;
                   enteringSubMenu = false;
@@ -485,6 +488,42 @@ void menuCapture() { // Function executes when you select the 2nd item from main
               }
             }
           
+          }else if(valueSelectedTrigger == TRIGGER_BT_SERIAL){
+            int activeButton = 0;
+            int button;
+            while (activeButton == 0){
+              readKey = analogRead(0);
+              if (readKey < 790) {
+                delay(100);
+                readKey = analogRead(0);
+              }
+              lcd.setCursor(0,0);
+              lcd.print("[DEBUG] Bluetooth trigger");
+              #ifdef DEBUG_DONG
+                Serial.println(F("[DEBUG] Sent command"));
+              #endif
+              shutterReleaseReady = false;
+              nextFrame = true;
+              Serial.print(commandShutterBT);
+              #ifdef DEBUG_DONG
+                Serial.println(F(" "));
+                Serial.println(F("[DEBUG] Done command"));
+              #endif
+              button = evaluateButton(readKey);
+              activeButton = 1;
+              switch (button) {
+                case 4:  // This case will execute if the "back" button is pressed
+                 #ifdef DEBUG_DONG
+                    Serial.println(F("[DEBUG] Pressed Cancel button"));
+                 #endif
+                  shutterReleaseReady = false;
+                  enteringSubMenu = false;
+                  isReadyCapture = false;
+                  button = 0;
+                  activeButton = 1;
+                break;
+              }
+            }
           }else{
             digitalWrite(loadTriggerInput, NYALA);
             delay(DELAY_BEFORE_SHUTTER_RELEASE); // shutter time needed
