@@ -27,6 +27,11 @@ const String VERSION = "0.0.1";
 #define MAX_FRAME 200
 #define DELAY_BEFORE_SHUTTER_RELEASE 50
 #define DELAY_AFTER_SHUTTER_RELEASE 1000
+
+#define TRIGGER_AUDIO_JACK 0
+#define TRIGGER_IR_SENSOR 1
+#define TRIGGER_MANUAL_BUTTON 2
+
 AlarmId id;
 AlarmId shutterId;
 int readKey;
@@ -420,11 +425,11 @@ void menuCapture() { // Function executes when you select the 2nd item from main
     id = Alarm.timerRepeat(loadDelay, trigger);
     isReadyCapture = true;
       //load by pin sensor
-    if(valueSelectedTrigger == 0){
+    if(valueSelectedTrigger == TRIGGER_AUDIO_JACK){
         loadTriggerInput = PIN_SHUTTER_JACK_AUDIO;
-    }else if(valueSelectedTrigger == 1){
+    }else if(valueSelectedTrigger == TRIGGER_IR_SENSOR){ // IR SENSOR
 
-    }else if(valueSelectedTrigger == 2){
+    }else if(valueSelectedTrigger == TRIGGER_MANUAL_BUTTON){
 
     }
     while(isReadyCapture){
@@ -447,12 +452,47 @@ void menuCapture() { // Function executes when you select the 2nd item from main
           Serial.println(loadFrame);
           Serial.println(F("[DEBUG] Shutter relase.. "));
           #endif
-          digitalWrite(loadTriggerInput, NYALA);
-          delay(DELAY_BEFORE_SHUTTER_RELEASE); // shutter time needed
-          digitalWrite(loadTriggerInput, MATI);
-          delay(DELAY_AFTER_SHUTTER_RELEASE);
-          shutterReleaseReady = false;
-          nextFrame = true;
+          if(valueSelectedTrigger == TRIGGER_MANUAL_BUTTON){
+            int activeButton = 0;
+            Serial.println("waiting trigger");
+            int button;
+            while (activeButton == 0){
+              readKey = analogRead(0);
+              if (readKey < 790) {
+                delay(100);
+                readKey = analogRead(0);
+              }
+              button = evaluateButton(readKey);
+              switch (button) {
+                case 1:
+                  #ifdef DEBUG_DONG
+                    Serial.println(F("Pressed right button"));
+                  #endif
+                  shutterReleaseReady = false;
+                  nextFrame = true;
+                  activeButton = 1;
+                break;
+                case 4:  // This case will execute if the "back" button is pressed
+                 #ifdef DEBUG_DONG
+                    Serial.println("Pressed Cancel button");
+                 #endif
+                  shutterReleaseReady = false;
+                  enteringSubMenu = false;
+                  isReadyCapture = false;
+                  button = 0;
+                  activeButton = 1;
+                break;
+              }
+            }
+          
+          }else{
+            digitalWrite(loadTriggerInput, NYALA);
+            delay(DELAY_BEFORE_SHUTTER_RELEASE); // shutter time needed
+            digitalWrite(loadTriggerInput, MATI);
+            delay(DELAY_AFTER_SHUTTER_RELEASE);
+            shutterReleaseReady = false;
+            nextFrame = true;
+          }
         }
 
         while(nextFrame){
