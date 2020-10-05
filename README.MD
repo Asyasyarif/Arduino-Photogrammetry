@@ -13,17 +13,19 @@ and also you can set the amount of photos from 1 to 200. for making it simpler I
 .. 
 
 ## results
+ Demo : [360.asyarif.net](https://www.360.asyarif.net/)
 
 ## Hardware Requirements
 - Arduino UNO
 - LCD Keypad Shield
 - Stepper Motor 28BYJ-48 + Driver
 - Jumper Wires
-
+- Adaptor 12V or I would recommend using the adaptor greater than 5v
 
 
 ## To do
- -
+ - Create Schematic
+ - 
 
 
  ### I know, the source code absolutely not efficient, by the way, pull requests are very welcome. I'll very appreciate it!
